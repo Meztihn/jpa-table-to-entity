@@ -10,9 +10,12 @@ buildscript {
 }
 
 group 'meztihn'
-version '1.0-SNAPSHOT'
+version '1.0'
 
 apply plugin: 'kotlin'
+apply plugin: 'application'
+
+mainClassName = 'meztihn.jpa.convert.entity.MainKt'
 
 repositories {
     mavenCentral()
