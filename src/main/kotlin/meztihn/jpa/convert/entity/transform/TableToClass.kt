@@ -88,7 +88,7 @@ val Table.Column.Type.temporalType: TemporalType
     }
 
 private fun temporalAnnotation(temporalType: TemporalType): AnnotationSpec = AnnotationSpec.builder(Temporal::class.java)
-    .addMember("value", "\$L", temporalType)
+    .addMember("value", "\$T.\$L", TemporalType::class.java, temporalType)
     .build()
 
 private fun constructor(fields: List<FieldSpec>): MethodSpec {
