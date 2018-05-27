@@ -3,10 +3,17 @@ package meztihn.jpa.convert.entity.parse
 import net.sf.jsqlparser.parser.CCJSqlParserUtil.parseStatements
 import net.sf.jsqlparser.statement.create.table.CreateTable
 
+private const val delimiter = ";"
+
 fun parseCreateTable(tableDefinition: String): CreateTable {
-    val statements = parseStatements(tableDefinition).statements.filter {
+    val (_, other) = tableDefinition.split(delimiter).partition {
+        it.trimStart().startsWith("comment on", ignoreCase = true)
+    }
+    val statements = parseStatements(other.joinToString(delimiter)).statements.filter {
         it is CreateTable
-    }.map { it as CreateTable }
+    }.map {
+        it as CreateTable
+    }
     return when (statements.size) {
         0 -> throw ParseException("Create table statement not found")
         1 -> statements.first()
