@@ -1,15 +1,23 @@
 package meztihn.jpa.convert.entity.java
 
-import com.squareup.javapoet.*
-import java.math.BigDecimal
-import java.util.*
+import com.squareup.javapoet.AnnotationSpec
+import com.squareup.javapoet.FieldSpec
+import com.squareup.javapoet.ParameterSpec
+import com.squareup.javapoet.TypeSpec
+import kotlin.reflect.KProperty1
+import kotlin.reflect.jvm.javaGetter
 
-object BasicTypeName {
-    val STRING: TypeName = TypeName.get(String::class.java)
-    val BIG_DECIMAL: TypeName = TypeName.get(BigDecimal::class.java)
-    val BYTE_ARRAY: TypeName = ArrayTypeName.get(Byte::class.java)
-    val DATE: TypeName = TypeName.get(Date::class.java)
-    val CALENDAR: TypeName = TypeName.get(Calendar::class.java)
+inline fun <reified Type> AnnotationSpec.Builder.add(
+    property: KProperty1<*, Type>,
+    value: Type
+): AnnotationSpec.Builder = apply {
+    if ((value != null) and (value != property.javaGetter!!.defaultValue)) {
+        when (value) {
+            is String -> addMember(property.name, "\$S", value)
+            is Enum<*> -> addMember(property.name, "\$T.\$L", Type::class.java, value)
+            else -> addMember(property.name, "\$L", value)
+        }
+    }
 }
 
 fun TypeSpec.Builder.addProperty(propertySpec: PropertySpec): TypeSpec.Builder = apply {

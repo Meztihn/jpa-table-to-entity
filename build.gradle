@@ -22,10 +22,12 @@ repositories {
 }
 
 dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-reflect"
     compile 'net.java.dev.designgridlayout:designgridlayout:1.11'
     compile 'javax.persistence:persistence-api:1.0.2'
+    compile 'com.github.jsqlparser:jsqlparser:1.2'
     compile 'com.squareup:javapoet:1.11.1'
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 }
 
 compileKotlin {

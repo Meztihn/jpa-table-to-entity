@@ -1,7 +1,7 @@
 package meztihn.jpa.convert.entity.view
 
 import com.squareup.javapoet.JavaFile
-import meztihn.jpa.convert.entity.parse.parseTable
+import meztihn.jpa.convert.entity.parse.parseCreateTable
 import meztihn.jpa.convert.entity.transform.toClass
 import net.java.dev.designgridlayout.DesignGridLayout
 import java.awt.BorderLayout
@@ -36,9 +36,9 @@ class MainFrame : DefaultFrame("Table to class converter") {
     }
 
     private fun convert() {
+        val createTable = parseCreateTable(tableTextArea.text)
         val options = classOptionsPanel.options
-        val table = parseTable(tableTextArea.text)
-        val typeSpec = table.toClass(options)
+        val typeSpec = createTable.toClass(options)
         StringWriter().use { writer ->
             JavaFile.builder("", typeSpec).indent(options.indent).build().writeTo(writer)
             classTextArea.text = writer.toString()
