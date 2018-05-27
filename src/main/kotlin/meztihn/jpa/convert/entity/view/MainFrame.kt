@@ -5,16 +5,10 @@ import meztihn.jpa.convert.entity.parse.ParseException
 import meztihn.jpa.convert.entity.parse.parseCreateTable
 import meztihn.jpa.convert.entity.transform.toClass
 import net.java.dev.designgridlayout.DesignGridLayout
-import java.awt.BorderLayout
-import java.awt.BorderLayout.CENTER
-import java.awt.BorderLayout.SOUTH
+import java.awt.Toolkit
+import java.awt.datatransfer.StringSelection
 import java.io.StringWriter
-import javax.swing.JButton
-import javax.swing.JPanel
-import javax.swing.JScrollPane
-import javax.swing.JTextArea
-
-private const val padding: Int = 16
+import javax.swing.*
 
 class MainFrame : DefaultFrame("Table to class converter") {
     private val textAreaHeight = 32
@@ -23,13 +17,16 @@ class MainFrame : DefaultFrame("Table to class converter") {
     private val tableTextArea = JTextArea(exampleTableDefinition, textAreaHeight, textAreaWidth)
     private val classOptionsPanel = ClassOptionsPanel()
     private val convertButton = JButton("Convert").apply { addActionListener { convert() } }
+    private val copyToClipboardNotificationLabel = JLabel("<html>Class copied to clipboard</html>").apply { isVisible = false }
     private val classTextArea = JTextArea("Class will appear here", textAreaHeight, textAreaWidth).apply { isEditable = false }
 
     init {
         val options = JPanel().apply {
-            layout = BorderLayout(padding, padding)
-            add(classOptionsPanel, CENTER)
-            add(convertButton, SOUTH)
+            DesignGridLayout(this).apply {
+                row().grid().add(classOptionsPanel)
+                row().grid().add(convertButton)
+                row().grid().add(copyToClipboardNotificationLabel)
+            }
         }
         DesignGridLayout(this).apply {
             row().grid().add(JScrollPane(tableTextArea), 2).add(options).add(JScrollPane(classTextArea), 2)
@@ -41,17 +38,31 @@ class MainFrame : DefaultFrame("Table to class converter") {
             val createTable = parseCreateTable(tableTextArea.text)
             val options = classOptionsPanel.options
             val typeSpec = createTable.toClass(options)
-            StringWriter().use { writer ->
+            val classDefinition = StringWriter().use { writer ->
                 JavaFile.builder("", typeSpec)
                     .indent(options.indent)
                     .build()
                     .writeTo(writer)
-                classTextArea.text = writer.toString()
+                writer.toString()
             }
+            classTextArea.text = classDefinition
+            copyToClipboard(classDefinition)
         } catch (e: ParseException) {
             showError("A parsing error occurred", e.message)
         }
     }
+
+    private fun copyToClipboard(text: String) {
+        val selection = StringSelection(text)
+        Toolkit.getDefaultToolkit().systemClipboard.setContents(selection, selection)
+        with(copyToClipboardNotificationLabel) {
+            isVisible = true
+            Timer(5.seconds) { isVisible = false }.start()
+        }
+    }
+
+    private val Int.seconds: Int
+        get() = this * 1000
 }
 
 private val exampleTableDefinition = """
