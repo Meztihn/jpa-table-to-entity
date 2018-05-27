@@ -24,6 +24,8 @@ enum class JpaType(val sqlName: String) {
     TIME("TIME");
 
     companion object {
+        private val withLength: Set<JpaType> = setOf(BIT, CHARACTER, VARCHAR)
+
         fun parse(type: String): JpaType {
             val typeName = type.toUpperCase().trim()
             return values().firstOrNull {
@@ -31,4 +33,10 @@ enum class JpaType(val sqlName: String) {
             } ?: throw ParseException("Unrecognized sql type: $type")
         }
     }
+
+    val isWithPrecision: Boolean
+        get() = this == NUMERIC
+
+    val isWithLength: Boolean
+        get() = withLength.contains(this)
 }

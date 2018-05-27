@@ -53,8 +53,8 @@ CREATE TABLE IF NOT EXISTS table_name (
     count BIGINT NOT NULL,
     time TIME,
     date DATE,
-    timestamp TIMESTAMP,
+    timestamp TIMESTAMP(4) with time zone,
     integer INTEGER,
-    big_decimal NUMERIC
+    big_decimal NUMERIC(16, 2)
 );
 """.trimIndent()

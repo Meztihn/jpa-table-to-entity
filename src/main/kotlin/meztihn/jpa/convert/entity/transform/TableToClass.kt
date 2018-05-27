@@ -41,12 +41,35 @@ fun ColumnDefinition.toField(nameExplicitness: Explicitness): FieldSpec {
     val type = JpaType.parse(colDataType.dataType)
     val javaClass = type.javaClass.run { takeUnless { nullable } ?: boxed }
     return FieldSpec.builder(javaClass, columnName.toLowerCamelCase(), PRIVATE).apply {
-        AnnotationSpec.builder(Column::class.java).apply {
-            if (nameExplicitness == Explicit) add(Column::name, columnName)
-            add(Column::nullable, nullable)
-        }.build().takeIf { it.members.isNotEmpty() }?.let { addAnnotation(it) }
+        toAnnotation(nameExplicitness).let { annotation ->
+            if (annotation.members.isNotEmpty()) addAnnotation(annotation)
+        }
         if ((javaClass == Date::class.java) or (javaClass == Calendar::class.java)) {
             addAnnotation(temporalAnnotation(type.temporalType))
+        }
+    }.build()
+}
+
+fun ColumnDefinition.toAnnotation(nameExplicitness: Explicitness): AnnotationSpec {
+    val type = JpaType.parse(colDataType.dataType)
+    return AnnotationSpec.builder(Column::class.java).apply {
+        if (nameExplicitness == Explicit) add(Column::name, columnName)
+        add(Column::nullable, nullable)
+        if (type.isWithLength) {
+            colDataType?.argumentsStringList
+                ?.takeIf { it.isNotEmpty() }
+                ?.first()
+                ?.toInt()
+                ?.let { length -> add(Column::length, length) }
+        }
+        if (type.isWithPrecision) {
+            colDataType?.argumentsStringList
+                ?.takeIf { it.isNotEmpty() }
+                ?.map { it.toInt() }
+                ?.let { arguments ->
+                    add(Column::precision, arguments[0])
+                    if (arguments.size > 1) add(Column::scale, arguments[1])
+                }
         }
     }.build()
 }
