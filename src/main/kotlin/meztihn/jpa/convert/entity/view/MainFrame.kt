@@ -1,6 +1,7 @@
 package meztihn.jpa.convert.entity.view
 
 import com.squareup.javapoet.JavaFile
+import meztihn.jpa.convert.entity.parse.ParseException
 import meztihn.jpa.convert.entity.parse.parseCreateTable
 import meztihn.jpa.convert.entity.transform.toClass
 import net.java.dev.designgridlayout.DesignGridLayout
@@ -19,10 +20,10 @@ class MainFrame : DefaultFrame("Table to class converter") {
     private val textAreaHeight = 32
     private val textAreaWidth = 32
 
-    private val tableTextArea: JTextArea = JTextArea(exampleTableDefinition, textAreaHeight, textAreaWidth)
-    private val classOptionsPanel: ClassOptionsPanel = ClassOptionsPanel()
-    private val convertButton: JButton = JButton("Convert").apply { addActionListener { convert() } }
-    private val classTextArea: JTextArea = JTextArea("Class will appear here", textAreaHeight, textAreaWidth).apply { isEditable = false }
+    private val tableTextArea = JTextArea(exampleTableDefinition, textAreaHeight, textAreaWidth)
+    private val classOptionsPanel = ClassOptionsPanel()
+    private val convertButton = JButton("Convert").apply { addActionListener { convert() } }
+    private val classTextArea = JTextArea("Class will appear here", textAreaHeight, textAreaWidth).apply { isEditable = false }
 
     init {
         val options = JPanel().apply {
@@ -36,12 +37,19 @@ class MainFrame : DefaultFrame("Table to class converter") {
     }
 
     private fun convert() {
-        val createTable = parseCreateTable(tableTextArea.text)
-        val options = classOptionsPanel.options
-        val typeSpec = createTable.toClass(options)
-        StringWriter().use { writer ->
-            JavaFile.builder("", typeSpec).indent(options.indent).build().writeTo(writer)
-            classTextArea.text = writer.toString()
+        try {
+            val createTable = parseCreateTable(tableTextArea.text)
+            val options = classOptionsPanel.options
+            val typeSpec = createTable.toClass(options)
+            StringWriter().use { writer ->
+                JavaFile.builder("", typeSpec)
+                    .indent(options.indent)
+                    .build()
+                    .writeTo(writer)
+                classTextArea.text = writer.toString()
+            }
+        } catch (e: ParseException) {
+            showError("A parsing error occurred", e.message)
         }
     }
 }
