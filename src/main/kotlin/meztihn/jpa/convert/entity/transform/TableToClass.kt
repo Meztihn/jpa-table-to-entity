@@ -5,17 +5,15 @@ import com.squareup.javapoet.FieldSpec
 import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.TypeSpec
 import meztihn.jpa.convert.entity.java.*
-import meztihn.jpa.convert.entity.java.Constructor.Default
-import meztihn.jpa.convert.entity.java.Constructor.Full
-import meztihn.jpa.convert.entity.java.Explicitness.Explicit
+import meztihn.jpa.convert.entity.java.Constructor.*
+import meztihn.jpa.convert.entity.java.Explicitness.*
 import meztihn.jpa.convert.entity.sql.JpaType
 import meztihn.jpa.convert.entity.sql.JpaType.*
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition
 import net.sf.jsqlparser.statement.create.table.CreateTable
 import java.math.BigDecimal
 import java.util.*
-import javax.lang.model.element.Modifier.PRIVATE
-import javax.lang.model.element.Modifier.PUBLIC
+import javax.lang.model.element.Modifier.*
 import javax.persistence.*
 
 fun CreateTable.toClass(options: Options): TypeSpec = with(options) {
@@ -75,7 +73,7 @@ fun ColumnDefinition.toAnnotation(nameExplicitness: Explicitness): AnnotationSpe
 }
 
 val ColumnDefinition.nullable: Boolean
-    get() = colDataType?.arrayData?.windowed(2)?.none {
+    get() = columnSpecStrings?.windowed(2)?.none {
         it.joinToString(" ").toLowerCase() == "not null"
     } ?: true
 
