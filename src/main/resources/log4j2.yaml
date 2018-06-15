@@ -1,0 +1,37 @@
+Configuration:
+  name: Default
+
+  Properties:
+
+    Property:
+      name: logs-path
+      value: "logs"
+
+  Appenders:
+
+    Console:
+      name: Console
+
+    RollingFile:
+      name: Files
+      fileName: ${logs-path}/app.log
+      filePattern: ${logs-path}/app-%i.log
+      Policies:
+        OnStartupTriggeringPolicy: {}
+      DefaultRollOverStrategy:
+        max: 4
+
+
+  Loggers:
+
+    Root:
+      level: warning
+      AppenderRef:
+        - ref: Console
+
+    Logger:
+      - name: meztihn.jpa.convert.entity
+        level: error
+        additivity: false
+        AppenderRef:
+          - ref: Files
