@@ -1,4 +1,4 @@
-package meztihn.jpa.convert.entity.view
+package meztihn.jpa.convert.entity.view.options
 
 import java.awt.Dimension
 import javax.swing.BorderFactory
@@ -6,7 +6,7 @@ import javax.swing.JPanel
 import javax.swing.border.TitledBorder
 import kotlin.math.max
 
-class PanelWithTitledBorder(title: String) : JPanel() {
+open class PanelWithTitledBorder(title: String) : JPanel() {
     companion object {
         /**
          * Default border minimal width is still not enough for full title.

@@ -4,13 +4,28 @@ import com.squareup.javapoet.JavaFile
 import meztihn.jpa.convert.entity.parse.ParseException
 import meztihn.jpa.convert.entity.parse.parseCreateTable
 import meztihn.jpa.convert.entity.transform.toClass
-import net.java.dev.designgridlayout.DesignGridLayout
+import meztihn.jpa.convert.entity.view.options.ClassOptionsPanel
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 import java.io.StringWriter
 import javax.swing.*
 
 class MainFrame : DefaultFrame("Table to class converter") {
+    companion object {
+        private val exampleTableDefinition = """
+        CREATE TABLE IF NOT EXISTS table_name (
+            uuid VARCHAR(36) NOT NULL,
+            index INTEGER NOT NULL,
+            count BIGINT NOT NULL,
+            time TIME,
+            date DATE,
+            timestamp TIMESTAMP(4) with time zone,
+            integer INTEGER,
+            big_decimal NUMERIC(16, 2)
+        );
+        """.trimIndent()
+    }
+
     private val textAreaHeight = 32
     private val textAreaWidth = 32
 
@@ -22,13 +37,13 @@ class MainFrame : DefaultFrame("Table to class converter") {
 
     init {
         val options = JPanel().apply {
-            DesignGridLayout(this).apply {
+            designGridLayout {
                 row().grid().add(classOptionsPanel)
                 row().grid().add(convertButton)
                 row().grid().add(copyToClipboardNotificationLabel)
             }
         }
-        DesignGridLayout(this).apply {
+        designGridLayout {
             row().grid().add(JScrollPane(tableTextArea), 3).add(options, 2).add(JScrollPane(classTextArea), 3)
         }
     }
@@ -64,16 +79,3 @@ class MainFrame : DefaultFrame("Table to class converter") {
     private val Int.seconds: Int
         get() = this * 1000
 }
-
-private val exampleTableDefinition = """
-CREATE TABLE IF NOT EXISTS table_name (
-    uuid VARCHAR(36) NOT NULL,
-    index INTEGER NOT NULL,
-    count BIGINT NOT NULL,
-    time TIME,
-    date DATE,
-    timestamp TIMESTAMP(4) with time zone,
-    integer INTEGER,
-    big_decimal NUMERIC(16, 2)
-);
-""".trimIndent()
