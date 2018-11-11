@@ -29,7 +29,7 @@ class MainFrame : DefaultFrame("Table to class converter") {
             }
         }
         DesignGridLayout(this).apply {
-            row().grid().add(JScrollPane(tableTextArea), 2).add(options).add(JScrollPane(classTextArea), 2)
+            row().grid().add(JScrollPane(tableTextArea), 3).add(options, 2).add(JScrollPane(classTextArea), 3)
         }
     }
 

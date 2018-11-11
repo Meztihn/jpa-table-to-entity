@@ -37,6 +37,10 @@ fun CreateTable.toClass(options: Options): TypeSpec = with(options) {
     }.build()
 }
 
+fun f() {
+
+}
+
 private fun fixTimeFieldsModel(columnDefinitions: List<ColumnDefinition>) {
     columnDefinitions
         .filter { it.colDataType.dataType.startsWith("time", ignoreCase = true) }
