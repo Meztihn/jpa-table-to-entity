@@ -10,6 +10,7 @@ import meztihn.jpa.convert.entity.java.Explicitness.*
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition
 import net.sf.jsqlparser.statement.create.table.CreateTable
 import java.math.BigDecimal
+import javax.lang.model.element.Modifier
 import javax.lang.model.element.Modifier.*
 import javax.persistence.*
 import kotlin.text.RegexOption.*
@@ -29,7 +30,10 @@ fun CreateTable.toClass(options: Options): TypeSpec = with(options) {
                 .build()
         )
         when (constructor) {
-            Full -> addMethod(constructor(fields))
+            Full -> {
+                addMethod(constructor(emptyList()))
+                addMethod(constructor(fields, PUBLIC))
+            }
             Default -> Unit
         }
         addModifiers(PUBLIC)
@@ -113,9 +117,9 @@ private fun temporalAnnotation(temporalType: TemporalType): AnnotationSpec {
         .build()
 }
 
-private fun constructor(fields: List<FieldSpec>): MethodSpec {
+private fun constructor(fields: List<FieldSpec>, modifier: Modifier? = null): MethodSpec {
     return MethodSpec.constructorBuilder().apply {
-        addModifiers(PUBLIC)
+        modifier?.let { addModifiers(it) }
         addParameters(fields.map { it.toParameter() })
         fields.forEach { addCode("this.$1L = $1L;\n", it.name) }
     }.build()
