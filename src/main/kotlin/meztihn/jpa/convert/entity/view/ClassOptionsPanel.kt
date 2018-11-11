@@ -1,11 +1,9 @@
 package meztihn.jpa.convert.entity.view
 
-import meztihn.jpa.convert.entity.java.Constructor.Default
-import meztihn.jpa.convert.entity.java.Constructor.Full
-import meztihn.jpa.convert.entity.java.Explicitness.Explicit
-import meztihn.jpa.convert.entity.java.Explicitness.Implicit
-import meztihn.jpa.convert.entity.java.Mutability.Immutable
-import meztihn.jpa.convert.entity.java.Mutability.Mutable
+import meztihn.jpa.convert.entity.java.Constructor.*
+import meztihn.jpa.convert.entity.java.DateTimePackage
+import meztihn.jpa.convert.entity.java.Explicitness.*
+import meztihn.jpa.convert.entity.java.Mutability.*
 import meztihn.jpa.convert.entity.transform.Options
 import net.java.dev.designgridlayout.DesignGridLayout
 import javax.swing.JCheckBox
@@ -25,6 +23,7 @@ class ClassOptionsPanel : JPanel() {
             if (immutableCheckbox.isSelected) Immutable else Mutable,
             if (constructorCheckbox.isSelected) Full else Default,
             if (namesExplicitnessCheckbox.isSelected) Explicit else Implicit,
+            DateTimePackage.util, // TODO
             indentTextField.text
         )
 

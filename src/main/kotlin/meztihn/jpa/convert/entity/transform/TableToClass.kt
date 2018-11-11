@@ -7,17 +7,19 @@ import com.squareup.javapoet.TypeSpec
 import meztihn.jpa.convert.entity.java.*
 import meztihn.jpa.convert.entity.java.Constructor.*
 import meztihn.jpa.convert.entity.java.Explicitness.*
-import meztihn.jpa.convert.entity.sql.JpaType
-import meztihn.jpa.convert.entity.sql.JpaType.*
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition
 import net.sf.jsqlparser.statement.create.table.CreateTable
 import java.math.BigDecimal
-import java.util.*
 import javax.lang.model.element.Modifier.*
 import javax.persistence.*
+import kotlin.text.RegexOption.*
+
+private val timeTypePattern = Regex("""(?<name>time\w*)\s*(?<args>\(.*\))?\s*(?<specs>.*)""", IGNORE_CASE)
+private val spaces = Regex("""\s+""")
 
 fun CreateTable.toClass(options: Options): TypeSpec = with(options) {
-    val fields = columnDefinitions.map { it.toField(options.namesExplicitness) }
+    fixTimeFieldsModel(columnDefinitions)
+    val fields = columnDefinitions.map { it.toField(options) }
     TypeSpec.classBuilder(table.name.toUpperCamelCase()).apply {
         addAnnotation(Entity::class.java)
         if (namesExplicitness == Explicit) addAnnotation(
@@ -35,32 +37,53 @@ fun CreateTable.toClass(options: Options): TypeSpec = with(options) {
     }.build()
 }
 
-fun ColumnDefinition.toField(nameExplicitness: Explicitness): FieldSpec {
-    val type = JpaType.parse(colDataType.dataType)
-    val javaClass = type.javaClass.run { takeUnless { nullable } ?: boxed }
-    return FieldSpec.builder(javaClass, columnName.toLowerCamelCase(), PRIVATE).apply {
-        toAnnotation(nameExplicitness).let { annotation ->
+private fun fixTimeFieldsModel(columnDefinitions: List<ColumnDefinition>) {
+    columnDefinitions
+        .filter { it.colDataType.dataType.startsWith("time", ignoreCase = true) }
+        .forEach { column ->
+            timeTypePattern.find(column.colDataType.dataType)?.groups?.let { groups ->
+                column.colDataType.dataType = groups["name"]!!.value
+                groups["args"]?.let { arguments ->
+                    column.colDataType.argumentsStringList = arguments.value.split(',').map { it.trim() }
+                }
+                groups["specs"]?.let { specifications ->
+                    val elements = specifications.value.split(spaces)
+                    column.columnSpecStrings = column.columnSpecStrings?.plus(elements) ?: elements
+                }
+            }
+        }
+}
+
+fun ColumnDefinition.toField(options: Options): FieldSpec {
+    val type = javaClassFor(colDataType.dataType).run { takeUnless { nullable } ?: boxed }
+    val shouldUseJavaUtilDate = (options.dateTimePackage == DateTimePackage.util) and isTemporal(type)
+    return FieldSpec.builder(
+        type.takeUnless { shouldUseJavaUtilDate } ?: java.util.Date::class.java,
+        columnName.toLowerCamelCase(),
+        PRIVATE
+    ).apply {
+        toAnnotation(options.namesExplicitness).let { annotation ->
             if (annotation.members.isNotEmpty()) addAnnotation(annotation)
         }
-        if ((javaClass == Date::class.java) or (javaClass == Calendar::class.java)) {
-            addAnnotation(temporalAnnotation(type.temporalType))
+        if (shouldUseJavaUtilDate) {
+            addAnnotation(temporalAnnotation(temporalTypeOf(type)))
         }
     }.build()
 }
 
 fun ColumnDefinition.toAnnotation(nameExplicitness: Explicitness): AnnotationSpec {
-    val type = JpaType.parse(colDataType.dataType)
+    val type = javaClassFor(colDataType.dataType)
     return AnnotationSpec.builder(Column::class.java).apply {
         if (nameExplicitness == Explicit) add(Column::name, columnName)
         add(Column::nullable, nullable)
-        if (type.isWithLength) {
+        if (type == String::class.java) {
             colDataType?.argumentsStringList
                 ?.takeIf { it.isNotEmpty() }
                 ?.first()
                 ?.toInt()
                 ?.let { length -> add(Column::length, length) }
         }
-        if (type.isWithPrecision) {
+        if (type == BigDecimal::class.java) {
             colDataType?.argumentsStringList
                 ?.takeIf { it.isNotEmpty() }
                 ?.map { it.toInt() }
@@ -77,39 +100,8 @@ val ColumnDefinition.nullable: Boolean
         it.joinToString(" ").toLowerCase() == "not null"
     } ?: true
 
-val JpaType.javaClass: Class<*>
-    get() = when (this) {
-        CHARACTER -> String::class.java
-        VARCHAR -> String::class.java
-        LONGVARCHAR -> String::class.java
-        NUMERIC -> BigDecimal::class.java
-        DECIMAL -> BigDecimal::class.java
-        BIT -> Boolean::class.java
-        TINYINT -> Byte::class.java
-        SMALLINT -> Short::class.java
-        INTEGER -> Int::class.java
-        BIGINT -> Long::class.java
-        REAL -> Float::class.java
-        FLOAT -> Double::class.java
-        DOUBLE_PRECISION -> Double::class.java
-        BINARY -> Array<Byte>::class.java
-        VARBINARY -> Array<Byte>::class.java
-        LONGVARBINARY -> Array<Byte>::class.java
-        DATE -> Date::class.java
-        TIME -> Date::class.java
-        TIMESTAMP -> Date::class.java
-    }
-
 val Class<*>.boxed
     get() = kotlin.javaObjectType
-
-val JpaType.temporalType: TemporalType
-    get() = when (this) {
-        DATE -> TemporalType.DATE
-        TIME -> TemporalType.TIME
-        TIMESTAMP -> TemporalType.TIMESTAMP
-        else -> throw IllegalArgumentException("$this is not a temporal type")
-    }
 
 private fun temporalAnnotation(temporalType: TemporalType): AnnotationSpec {
     return AnnotationSpec.builder(Temporal::class.java)
