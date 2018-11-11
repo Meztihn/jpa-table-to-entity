@@ -10,12 +10,20 @@ buildscript {
 }
 
 plugins {
+    id 'idea'
     id 'org.jetbrains.kotlin.jvm' version '1.3.0'
     id 'application'
 }
 
 group 'meztihn'
 version '1.1'
+
+idea {
+    module {
+        downloadJavadoc = true
+        excludeDirs += file('logs')
+    }
+}
 
 mainClassName = 'meztihn.jpa.convert.entity.MainKt'
 
